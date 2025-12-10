@@ -1,0 +1,190 @@
+openapi: 3.0.0
+info:
+  title: Glimpse API
+  description: API for user authentication, roles, and other features.
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: API Base Path
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: The user's unique ID.
+          example: 60d0fe4f5311236168a109ca
+        name:
+          type: string
+          example: Rushitaben Vachhani
+        email:
+          type: string
+          format: email
+          example: rushi@northeastern.edu
+        role:
+          type: string
+          enum: [user, admin, analyst]
+          example: user
+
+    AuthResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109ca
+        name:
+          type: string
+          example: Rushitaben Vachhani
+        email:
+          type: string
+          format: email
+          example: rushi@northeastern.edu
+        role:
+          type: string
+          enum: [user, admin, analyst]
+          example: user
+        token:
+          type: string
+          description: JWT token for authentication.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: A message describing the error.
+        error:
+          type: string
+          description: Detailed error information (optional).
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/signup:
+    post:
+      summary: Register a new user
+      description: Creates a new user account. The default role is 'user'.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: Rushitaben Vachhani
+                email:
+                  type: string
+                  format: email
+                  example: rushi@northeastern.edu
+                password:
+                  type: string
+                  format: password
+                  example: 'Nu#4106552'
+                role:
+                  type: string
+                  enum: [user, admin, analyst]
+                  description: Optional role for the new user. Defaults to 'user'.
+                  example: user
+      responses:
+        '201':
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad Request (e.g., user already exists, invalid data).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: Log in a user
+      description: Authenticates a user and returns a JWT.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: rushi@northeastern.edu
+                password:
+                  type: string
+                  format: password
+                  example: 'Nu#4106552'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized (Invalid email or password).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profile:
+    get:
+      summary: Get user profile
+      description: Retrieves the profile of the currently logged-in user.
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Not authorized (token is missing or invalid).
+          content:
+            application/json:
+              schema:
